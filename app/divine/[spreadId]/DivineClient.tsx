@@ -10,6 +10,7 @@ import { DECKS, DEFAULT_DECK_ID, getCardImageUrl, getBackImageUrl } from '@/lib/
 import { site, tgLinks } from '@/lib/site';
 import { initTelegram, haptic, openTgLink, isMiniApp } from '@/components/TgInitData';
 import type { TgUser } from '@/lib/telegram/subscription';
+import AnimatedEmoji from '@/components/AnimatedEmoji';
 
 type Phase = 'setup' | 'shuffling' | 'dealing' | 'revealed' | 'paywall' | 'reading';
 
@@ -332,7 +333,7 @@ export default function DivineClient({ spread }: { spread: SpreadType }) {
                       : 'border-white/10 text-moon/60 hover:border-gold/40'
                   }`}
                 >
-                  <span>{t.icon}</span>
+                  <AnimatedEmoji id={t.id} fallback={t.icon} className="w-5 h-5 object-contain" />
                   {t.label}
                 </button>
               ))}
