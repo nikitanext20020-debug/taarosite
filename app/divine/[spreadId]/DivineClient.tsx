@@ -1,0 +1,403 @@
+'use client';
+
+import { useEffect, useState, useRef } from 'react';
+import Link from 'next/link';
+import Card3D from '@/components/Card3D';
+import { THEMES, type SpreadType } from '@/lib/tarot/spreads';
+import { getCard } from '@/lib/tarot/deck';
+import { site, tgLinks } from '@/lib/site';
+import { initTelegram, haptic, openTgLink, isMiniApp } from '@/components/TgInitData';
+import type { TgUser } from '@/lib/telegram/subscription';
+
+type Phase = 'setup' | 'shuffling' | 'dealing' | 'revealed' | 'paywall' | 'reading';
+
+interface ApiCard {
+  id: number;
+  name: string;
+  reversed: boolean;
+  position: number;
+}
+
+interface PositionInfo {
+  title: string;
+  hint: string;
+}
+
+export default function DivineClient({ spread }: { spread: SpreadType }) {
+  const [phase, setPhase] = useState<Phase>('setup');
+  const [theme, setTheme] = useState<string>('general');
+  const [question, setQuestion] = useState('');
+  const [tgUser, setTgUser] = useState<TgUser | null>(null);
+  const [webUserId, setWebUserId] = useState<string | null>(null);
+  const [inMiniApp, setInMiniApp] = useState(false);
+
+  const [readingId, setReadingId] = useState<string | null>(null);
+  const [cards, setCards] = useState<ApiCard[]>([]);
+  const [positions, setPositions] = useState<PositionInfo[]>([]);
+  const [interpretation, setInterpretation] = useState<string>('');
+  const [freeReadsLeft, setFreeReadsLeft] = useState<number | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Стейты звука
+  const [isMuted, setIsMuted] = useState(true);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  // Инициализация TG, Web-пользователя и Аудио
+  useEffect(() => {
+    const u = initTelegram();
+    setTgUser(u);
+    setInMiniApp(isMiniApp());
+
+    if (!u) {
+      let wId = localStorage.getItem('liza_web_user_id');
+      if (!wId) {
+        wId = 'web_' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+        localStorage.setItem('liza_web_user_id', wId);
+      }
+      setWebUserId(wId);
+    }
+
+    // Загрузка мистического фонового эмбиента
+    audioRef.current = new Audio('https://assets.mixkit.co/music/preview/mixkit-mystical-mystic-ambient-1160.mp3');
+    audioRef.current.loop = true;
+    audioRef.current.volume = 0.35;
+
+    return () => {
+      audioRef.current?.pause();
+    };
+  }, []);
+
+  const toggleMute = () => {
+    if (!audioRef.current) return;
+    if (isMuted) {
+      audioRef.current.play().catch(() => {});
+      setIsMuted(false);
+    } else {
+      audioRef.current.pause();
+      setIsMuted(true);
+    }
+    haptic('light');
+  };
+
+  // ── Старт расклада ──────────────────────────────────────
+  async function startReading() {
+    setLoading(true);
+    setError(null);
+    haptic('light');
+    setPhase('shuffling');
+
+    try {
+      const res = await fetch('/api/divine', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          spreadId: spread.id,
+          theme,
+          question: question.trim() || undefined,
+          tgUser: tgUser ?? undefined,
+          webUserId: webUserId ?? undefined,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Ошибка расклада');
+
+      setReadingId(data.readingId);
+      setCards(data.cards);
+      setPositions(data.positions);
+      setFreeReadsLeft(data.freeAvailable ? 1 : 0);
+
+      // Анимация раздачи
+      setPhase('dealing');
+      haptic('success');
+      await wait(800 + spread.count * 300);
+
+      // Сразу раскрываем расклад, минуя paywall в демо-режиме
+      await reveal(data.readingId);
+    } catch (e) {
+      setError((e as Error).message);
+      setPhase('setup');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // ── Проверка подписки (Заглушка) ────────────────────────
+  async function checkSub() {
+    haptic('success');
+    await reveal();
+  }
+
+  // ── Раскрытие текста (после подписки или за бесплатные) ─
+  async function reveal(overrideReadingId?: string) {
+    const id = overrideReadingId || readingId;
+    if (!id) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch('/api/interpret', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          readingId: id,
+          tgUser: tgUser ?? undefined,
+          webUserId: webUserId ?? undefined,
+        }),
+      });
+      const data = await res.json();
+
+      if (res.status === 402) {
+        // Paywall — нужна подписка
+        setPhase('paywall');
+        setFreeReadsLeft(data.freeReadsLeft ?? 0);
+        return;
+      }
+      if (!res.ok) throw new Error(data.error || 'Ошибка интерпретации');
+
+      setInterpretation(data.text);
+      setPhase('reading');
+      haptic('success');
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <main className="container-mystic min-h-screen py-8 sm:py-12 relative overflow-hidden">
+      {/* Дыхание Бездны на фоне */}
+      <div className="void-glow-bg" />
+
+      {/* Кнопка переключения звука */}
+      <div className="absolute right-4 top-4 z-50">
+        <button
+          onClick={toggleMute}
+          className="flex h-10 w-10 items-center justify-center rounded-full border border-gold/30 bg-midnight/80 text-base text-gold transition-all duration-300 hover:border-gold hover:bg-ash shadow-mystic"
+          title={isMuted ? 'Включить таинственную музыку' : 'Выключить музыку'}
+        >
+          {isMuted ? '🔇' : '🔮🔊'}
+        </button>
+      </div>
+
+      {/* Шапка */}
+      <div className="mb-8 text-center relative z-10">
+        <Link href="/" className="text-xs text-moon/40 transition hover:text-gold">
+          ← Все расклады
+        </Link>
+        <h1 className="mt-3 font-display text-3xl text-moon sm:text-4xl">
+          <span className="mr-2">{spread.icon}</span>
+          {spread.name}
+        </h1>
+        <p className="mt-1 text-sm text-moon/50">{spread.description}</p>
+      </div>
+
+      {error && (
+        <div className="mx-auto mb-6 max-w-md rounded-lg border border-blood/40 bg-blood/10 p-3 text-center text-sm text-blood/90 relative z-10">
+          {error}
+        </div>
+      )}
+
+      {/* ═══ SETUP: выбор темы и вопроса ═══ */}
+      {phase === 'setup' && (
+        <div className="mx-auto max-w-lg space-y-6 relative z-10">
+          <div>
+            <label className="mb-3 block font-display text-sm text-moon/70">
+              Тема вопроса
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {THEMES.map((t) => (
+                <button
+                  key={t.id}
+                  onClick={() => {
+                    setTheme(t.id);
+                    haptic('light');
+                  }}
+                  className={`flex items-center gap-2 rounded-full border px-4 py-2 text-sm transition ${
+                    theme === t.id
+                      ? 'border-gold bg-gold/15 text-gold-bright'
+                      : 'border-white/10 text-moon/60 hover:border-gold/40'
+                  }`}
+                >
+                  <span>{t.icon}</span>
+                  {t.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <label className="mb-2 block font-display text-sm text-moon/70">
+              Твой вопрос <span className="text-moon/30">(необязательно)</span>
+            </label>
+            <textarea
+              value={question}
+              onChange={(e) => setQuestion(e.target.value)}
+              placeholder="Например: что меня ждёт в отношениях?"
+              rows={3}
+              className="w-full resize-none rounded-xl border border-white/10 bg-midnight/70 p-4 text-moon placeholder:text-moon/30 focus:border-gold/50 focus:outline-none"
+            />
+          </div>
+
+          <button
+            onClick={startReading}
+            disabled={loading}
+            className="btn-primary w-full"
+          >
+            {loading ? '🌙 Тасую колоду...' : '🔮 Разложить карты'}
+          </button>
+
+          {!tgUser && (
+            <p className="text-center text-xs text-moon/40">
+              Совет: открой в Telegram — так расклады сохраняются в историю.
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* ═══ SHUFFLING: анимация тасования колоды ═══ */}
+      {phase === 'shuffling' && (
+        <div className="mx-auto max-w-md py-12 flex flex-col items-center gap-6 relative z-10">
+          <div className="relative h-44 w-28 scene-3d flex items-center justify-center">
+            {/* Три карты в стопке с анимацией вылета */}
+            <div className="absolute inset-0 rounded-xl border border-gold/40 shadow-card bg-midnight overflow-hidden shuffle-card-l">
+              <img src="/deck/back.jpg" alt="Тасовка" className="h-full w-full object-cover" />
+            </div>
+            <div className="absolute inset-0 rounded-xl border border-gold/40 shadow-card bg-midnight overflow-hidden shuffle-card-r">
+              <img src="/deck/back.jpg" alt="Тасовка" className="h-full w-full object-cover" />
+            </div>
+            <div className="absolute inset-0 rounded-xl border border-gold/50 shadow-glow bg-midnight overflow-hidden shuffle-card-c">
+              <img src="/deck/back.jpg" alt="Тасовка" className="h-full w-full object-cover" />
+            </div>
+          </div>
+          <p className="animate-pulse text-center font-display text-lg text-gold-bright">
+            🌙 {site.name} тасует колоду карт...
+          </p>
+        </div>
+      )}
+
+      {/* ═══ DEALING / PAYWALL / READING: анимация раздачи и paywall ═══ */}
+      {(phase === 'dealing' || phase === 'paywall' || phase === 'reading') && cards.length > 0 && (
+        <div className="mx-auto max-w-3xl relative">
+          {/* Мерцающий туман позади карт */}
+          <div className="mystic-fog rounded-full opacity-35 filter blur-3xl" />
+
+          <div className="flex flex-row flex-wrap justify-center items-end gap-4 sm:gap-6 relative z-10">
+            {cards.map((c, i) => {
+              const card = getCard(c.id);
+              const pos = positions[i];
+              // Карты раскрываем по фазам (лицо открываем ТОЛЬКО после paywall, в фазе reading)
+              const faceUp = phase === 'reading';
+              return (
+                <Card3D
+                  key={c.id}
+                  card={card}
+                  faceUp={faceUp}
+                  reversed={c.reversed}
+                  interactive={true}
+                  size={spread.count > 5 ? 'sm' : spread.count > 3 ? 'md' : 'lg'}
+                  dealDelay={i * 300}
+                  label={pos?.title}
+                  hint={pos?.hint}
+                />
+              );
+            })}
+          </div>
+
+          {phase === 'dealing' && (
+            <p className="mt-10 animate-pulse text-center font-display text-lg text-gold-bright relative z-10">
+              Карты открываются...
+            </p>
+          )}
+
+          {/* ═══ PAYWALL (Заглушка) ═══ */}
+          {phase === 'paywall' && (
+            <div className="mt-10 rounded-2xl border border-gold/30 bg-gradient-to-b from-midnight to-void p-6 text-center shadow-glow relative z-10">
+              <div className="mb-3 text-4xl">🔮</div>
+              <h3 className="mb-2 font-display text-2xl text-moon">
+                Открыть текст расклада
+              </h3>
+              <p className="mb-4 text-moon/60">
+                В демо-режиме вы можете открыть расклад бесплатно.
+              </p>
+
+              <div className="mt-5 flex flex-col items-center justify-center gap-3 sm:flex-row">
+                <button
+                  onClick={checkSub}
+                  disabled={loading}
+                  className="btn-primary"
+                >
+                  {loading ? 'Открываю...' : '🔮 Открыть расклад'}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* ═══ READING: текст интерпретации ═══ */}
+          {phase === 'reading' && (
+            <div className="mt-8 space-y-4 relative z-10">
+              <div className="whitespace-pre-line rounded-2xl border border-white/10 bg-midnight/70 p-6 leading-relaxed text-moon/90">
+                {renderInterpretation(interpretation)}
+              </div>
+
+              <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
+                {!tgUser ? (
+                  <button
+                    onClick={() => {
+                      haptic('light');
+                      setPhase('paywall');
+                    }}
+                    className="btn-primary px-10"
+                  >
+                    Продолжить
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => {
+                      setPhase('setup');
+                      setCards([]);
+                      setInterpretation('');
+                      setReadingId(null);
+                    }}
+                    className="btn-primary"
+                  >
+                    🔮 Новый расклад
+                  </button>
+                )}
+                <button
+                  onClick={() => alert('Telegram-канал скоро откроется! 🔮')}
+                  className="btn-ghost"
+                >
+                  Больше гаданий в канале
+                </button>
+              </div>
+
+              <p className="text-center text-[11px] text-moon/30">
+                ✦ Интерпретация сгенерирована нейросетью и носит развлекательный характер.
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+    </main>
+  );
+}
+
+/** Простой markdown-подобный рендер: **жирный** и переводы строк */
+function renderInterpretation(text: string) {
+  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+  return parts.map((p, i) => {
+    if (p.startsWith('**') && p.endsWith('**')) {
+      return (
+        <strong key={i} className="font-semibold text-gold-bright">
+          {p.slice(2, -2)}
+        </strong>
+      );
+    }
+    return <span key={i}>{p}</span>;
+  });
+}
+
+function wait(ms: number) {
+  return new Promise((r) => setTimeout(r, ms));
+}

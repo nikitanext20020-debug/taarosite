@@ -1,0 +1,91 @@
+// Prisma schema для «Гадания от Лизы»
+//
+// По умолчанию — SQLite (file:./dev.db) для мгновенного локального старта
+// без установки чего-либо. Для продакшена переключи на PostgreSQL:
+//   1) provider = "postgresql"
+//   2) DATABASE_URL="postgresql://..." в .env
+//   3) npx prisma migrate deploy
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+/// Пользователь (привязан к Telegram)
+model User {
+  id            String   @id @default(cuid())
+  telegramId    String?  @unique
+  webId         String?  @unique
+  username      String?
+  firstName     String?
+  lastName      String?
+  photoUrl      String?
+
+  /// Подписан ли на канал Лизы (кэш getChatMember)
+  isSubscribed  Boolean  @default(false)
+  subCheckedAt  DateTime?
+
+  /// Кол-во оставшихся бесплатных раскладов
+  freeReadsLeft Int      @default(1)
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  readings      Reading[]
+
+  @@index([telegramId])
+  @@index([webId])
+}
+
+/// Готовый расклад
+model Reading {
+  id            String   @id @default(cuid())
+  userId        String?
+  user          User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  /// Тип расклада (spread.id)
+  spreadType    String
+  theme         String?
+  question      String?
+
+  /// Seed тасовки (для воспроизведения) — строка, чтобы не упираться в лимит Int
+  seed          String
+  /// Вытянутые карты (JSON-строка: [{id,name,reversed,position}])
+  cards         String
+
+  /// Интерпретация нейросети (открывается после подписки)
+  interpretation String?
+  interpreted   Boolean  @default(false)
+
+  /// Раскрыт ли пользователю (прошёл paywall)
+  revealed      Boolean  @default(false)
+  revealedAt    DateTime?
+
+  createdAt     DateTime @default(now())
+
+  @@index([userId])
+  @@index([spreadType])
+}
+
+/// Лог запросов к нейросети
+model AiLog {
+  id        String   @id @default(cuid())
+  readingId String?
+  provider  String
+  model     String
+  prompt    String
+  response  String
+  tokensIn  Int?
+  tokensOut Int?
+  latencyMs Int?
+  success   Boolean  @default(true)
+  error     String?
+  createdAt DateTime @default(now())
+
+  @@index([readingId])
+  @@index([createdAt])
+}
