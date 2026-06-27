@@ -73,14 +73,16 @@ export function drawCards(
     };
   });
 
-  // Добавляем фоновую карту со дна колоды (последняя карта в перемешанной колоде)
-  const bottomCard = shuffled[shuffled.length - 1];
-  const bottomReversed = rng() < 0.2;
-  cards.push({
-    card: bottomCard,
-    reversed: bottomReversed,
-    position: 0,
-  });
+  // Добавляем фоновую карту со дна колоды только для расклада "Три карты" (three-cards)
+  if (spread.id === 'three-cards') {
+    const bottomCard = shuffled[shuffled.length - 1];
+    const bottomReversed = rng() < 0.2;
+    cards.push({
+      card: bottomCard,
+      reversed: bottomReversed,
+      position: 0,
+    });
+  }
 
   return { seed: actualSeed, cards };
 }
