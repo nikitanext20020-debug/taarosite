@@ -9,7 +9,7 @@
 
 import type { TarotCard } from './types';
 
-const img = (id: number) => `/deck/${id}.gif`;
+const img = (id: number) => `/decks/deviant-moon/${id}.gif`;
 
 export const DECK: TarotCard[] = [
   // ═════════════ СТАРШИЕ АРКАНЫ (0–21) ═════════════
