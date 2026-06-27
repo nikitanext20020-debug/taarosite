@@ -91,11 +91,24 @@ export async function POST(req: Request) {
       userPrompt,
     });
 
+    const disclaimer = `
+
+---
+Важное напоминание:  
+Таро — это инструмент для размышления. Ты сам несёшь полную ответственность за все свои решения и действия.  
+Расклад не заменяет профессиональную юридическую, медицинскую или финансовую помощь.  
+Также ты сам отвечаешь за своё эмоциональное и ментальное состояние после прочтения расклада.`;
+
+    let finalInterpretation = text;
+    if (!finalInterpretation.includes('Важное напоминание') && !finalInterpretation.includes('Важно помнить')) {
+      finalInterpretation += disclaimer;
+    }
+
     // Сохраним интерпретацию + лог
     await prisma.reading.update({
       where: { id: readingId },
       data: {
-        interpretation: text,
+        interpretation: finalInterpretation,
         interpreted: true,
         revealed: true,
         revealedAt: new Date(),

@@ -8,6 +8,7 @@
  */
 
 import type { AiProvider, InterpretParams, InterpretResult } from './provider';
+import { DECK } from '../tarot/deck';
 
 const INTROS = [
   'Я разложила для тебя карты, и они открывают очень интересную картину.',
@@ -46,34 +47,59 @@ export class MockProvider implements AiProvider {
 
     const seed = hash(params.userPrompt);
 
-    // Достаём карты из промпта (строки «- Позиция ... : ...»)
+    // Достаём карты из промпта (строки «- **Позиция**...»)
     const cardLines = params.userPrompt
       .split('\n')
-      .filter((l) => l.trimStart().startsWith('- Позиция'));
+      .filter((l) => l.trimStart().startsWith('- **'));
 
     const cardsParsed = cardLines.map((line) => {
-      const m = line.match(/«(.+?)»:\s*(.+?)\s*\((.+?)\)/);
-      if (!m) return { pos: 'Позиция', card: line, reversed: false };
-      return {
-        pos: m[1],
-        card: m[2],
-        reversed: m[3].includes('перевёрнут'),
-      };
+      // Формат: - **Суть вопроса** (Главная энергия ситуации): Шут (прямое положение).
+      const m = line.match(/-\s*\*\*(.+?)\*\*(\s*\(.+?\))?:\s*(.+?)\s*\((.+?)\)/);
+      if (!m) {
+        const cleaned = line.replace(/^-\s*\*\*/, '').replace(/\*\*/, '');
+        const parts = cleaned.split(':');
+        const pos = parts[0]?.trim() || 'Позиция';
+        const cardWithState = parts[1]?.trim() || 'Карта';
+        const reversed = cardWithState.toLowerCase().includes('перевёрнут') || cardWithState.toLowerCase().includes('перевернут');
+        const cardName = cardWithState.split('(')[0]?.trim() || cardWithState;
+        return { pos, card: cardName, reversed };
+      }
+      const pos = m[1].trim();
+      const card = m[3].trim().replace(/\.$/, '');
+      const reversed = m[4].toLowerCase().includes('перевёрнут') || m[4].toLowerCase().includes('перевернут');
+      return { pos, card, reversed };
     });
 
     const intro = pick(INTROS, seed);
 
     const body = cardsParsed
       .map((c, i) => {
-        const tone = c.reversed
-          ? 'В перевёрнутом виде эта карта говорит об искажении или блокировке её энергии.'
-          : 'В прямом положении её свет проявлен в полной мере.';
-        return `**${c.pos} — ${c.card}.** ${tone} Это указывает на важный аспект твоей ситуации, требующий внимания.`;
+        // Находим карту в DECK по имени
+        const cardObj = DECK.find((x) => x.name.toLowerCase() === c.card.toLowerCase());
+        const meaning = cardObj
+          ? (c.reversed ? cardObj.meaningReversed : cardObj.meaningUpright)
+          : 'Эта карта указывает на важные аспекты вашей текущей жизненной ситуации.';
+        const keywords = cardObj
+          ? (c.reversed ? cardObj.keywordsReversed : cardObj.keywordsUpright).join(', ')
+          : 'энергия, влияние';
+
+        return `### **${c.pos}**: ${c.card} (${c.reversed ? 'перевёрнутое положение' : 'прямое положение'})  
+*Ключевые значения:* ${keywords}  
+
+${meaning} В контексте позиции «${c.pos}» этот символ заслуживает особого внимания в вашем раскладе.`;
       })
       .join('\n\n');
 
     const advice = pick(ADVICE, seed >> 3);
     const outro = pick(OUTROS, seed >> 5);
+
+    const disclaimer = `
+
+---
+Важное напоминание:  
+Таро — это инструмент для размышления. Ты сам несёшь полную ответственность за все свои решения и действия.  
+Расклад не заменяет профессиональную юридическую, медицинскую или финансовую помощь.  
+Также ты сам отвечаешь за своё эмоциональное и ментальное состояние после прочтения расклада.`;
 
     const text = [
       intro,
@@ -83,6 +109,7 @@ export class MockProvider implements AiProvider {
       `**Совет:** ${advice}`,
       '',
       outro,
+      disclaimer,
     ].join('\n');
 
     return {

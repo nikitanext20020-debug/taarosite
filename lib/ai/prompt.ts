@@ -81,7 +81,7 @@ export function buildUserPrompt(params: {
   for (const c of cards) {
     const hint = positions.find((p) => p.title === c.positionTitle)?.hint;
     lines.push(
-      `- **${c.positionTitle}**${hint ? ` (${hint})` : ''}: ${c.name}.`,
+      `- **${c.positionTitle}**${hint ? ` (${hint})` : ''}: ${c.name} (${c.reversed ? 'перевёрнутое положение' : 'прямое положение'}).`,
     );
   }
 

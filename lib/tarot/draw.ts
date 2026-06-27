@@ -63,11 +63,24 @@ export function drawCards(
   const shuffled = shuffle(DECK, rng);
   const picked: TarotCard[] = shuffled.slice(0, spread.count);
 
-  const cards: DrawnCard[] = picked.map((card, i) => ({
-    card,
-    reversed: false, // карты всегда в прямом положении
-    position: i + 1,
-  }));
+  const cards: DrawnCard[] = picked.map((card, i) => {
+    // Реверсируем карту случайным образом (например, с вероятностью 20%)
+    const reversed = rng() < 0.2;
+    return {
+      card,
+      reversed,
+      position: i + 1,
+    };
+  });
+
+  // Добавляем фоновую карту со дна колоды (последняя карта в перемешанной колоде)
+  const bottomCard = shuffled[shuffled.length - 1];
+  const bottomReversed = rng() < 0.2;
+  cards.push({
+    card: bottomCard,
+    reversed: bottomReversed,
+    position: 0,
+  });
 
   return { seed: actualSeed, cards };
 }

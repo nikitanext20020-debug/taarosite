@@ -233,30 +233,15 @@ export default function DivineClient({ spread }: { spread: SpreadType }) {
                         : 'border-white/10 bg-midnight/40 hover:border-gold/30'
                     }`}
                   >
-                    {/* Миниатюра рубашки */}
+                    {/* Миниатюра (Лицо карты «Солнце» для превью стиля) */}
                     <div className="flex-shrink-0 mt-0.5">
-                      <div className="w-8 h-12 rounded overflow-hidden border border-white/10 relative">
-                        {(() => {
-                          const backUrl = getBackImageUrl(deck.id);
-                          const isVideo = backUrl.endsWith('.webm') || backUrl.endsWith('.mp4');
-                          return isVideo ? (
-                            <video
-                              src={backUrl}
-                              autoPlay
-                              loop
-                              muted
-                              playsInline
-                              className="h-full w-full object-cover"
-                            />
-                          ) : (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img
-                              src={backUrl}
-                              alt={deck.name}
-                              className="h-full w-full object-cover"
-                            />
-                          );
-                        })()}
+                      <div className="w-8 h-12 rounded overflow-hidden border border-white/10 relative shadow-[0_2px_6px_rgba(0,0,0,0.3)]">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={getCardImageUrl(19, deck.id)}
+                          alt={deck.name}
+                          className="h-full w-full object-cover"
+                        />
                       </div>
                     </div>
                     <div className="flex-1 min-w-0">
@@ -273,6 +258,25 @@ export default function DivineClient({ spread }: { spread: SpreadType }) {
                       <p className="mt-0.5 text-[11px] leading-relaxed text-moon/50 line-clamp-2">
                         {deck.description}
                       </p>
+
+                      {/* Превью-галерея карт при выборе колоды */}
+                      {deckId === deck.id && (
+                        <div className="mt-3 flex gap-1.5 animate-fadeIn">
+                          {[10, 19, 22, 50].map((cardId) => {
+                            const imgUrl = getCardImageUrl(cardId, deck.id);
+                            return (
+                              <div key={cardId} className="w-9 h-14 rounded overflow-hidden border border-gold/25 relative shadow-mystic group hover:border-gold hover:scale-105 transition-all duration-300">
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img
+                                  src={imgUrl}
+                                  alt="Пример карты"
+                                  className="h-full w-full object-cover"
+                                />
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
                   </button>
                 ))}
@@ -400,15 +404,31 @@ export default function DivineClient({ spread }: { spread: SpreadType }) {
 
           {/* ── DeckReveal: 3D-анимация расклада (только в фазе dealing до завершения) ── */}
           {phase === 'dealing' && !deckRevealed && (() => {
-            const revealCards: RevealCard[] = cards.map((c, i) => ({
+            const mainCards = cards.filter((c) => c.position !== 0);
+            const bottomCardData = cards.find((c) => c.position === 0);
+
+            const revealCards: RevealCard[] = mainCards.map((c, i) => ({
               card: { ...getCard(c.id), image: getCardImageUrl(c.id, deckId) },
               reversed: c.reversed,
               label: positions[i]?.title,
             }));
+
+            const revealBottomCard: RevealCard | null = bottomCardData
+              ? {
+                  card: {
+                    ...getCard(bottomCardData.id),
+                    image: getCardImageUrl(bottomCardData.id, deckId),
+                  },
+                  reversed: bottomCardData.reversed,
+                  label: 'Фоновая карта',
+                }
+              : null;
+
             return (
               <DeckReveal
                 key={deckId}
                 spreadCards={revealCards}
+                bottomCard={revealBottomCard}
                 autoPlay
                 cardBack={getBackImageUrl(deckId)}
                 onComplete={onDeckComplete}
@@ -418,29 +438,59 @@ export default function DivineClient({ spread }: { spread: SpreadType }) {
 
           {/* ── Сетка Card3D: показывается после DeckReveal или в paywall/reading ── */}
           {(deckRevealed || phase === 'paywall' || phase === 'reading') && (
-            <div className="flex flex-row flex-wrap justify-center items-end gap-4 sm:gap-6 relative z-10">
-              {cards.map((c, i) => {
-                const card = getCard(c.id);
-                const pos = positions[i];
+            <div className="space-y-8 z-10 relative">
+              {/* Главный ряд карт расклада */}
+              <div className="flex flex-row flex-wrap justify-center items-end gap-4 sm:gap-6">
+                {cards.filter((c) => c.position !== 0).map((c, i) => {
+                  const card = getCard(c.id);
+                  const pos = positions[c.position - 1] || positions[i];
+                  const faceUp = phase === 'reading';
+                  const cardWithDeckImage = {
+                    ...card,
+                    image: getCardImageUrl(card.id, deckId),
+                  };
+                  return (
+                    <Card3D
+                      key={c.id}
+                      card={cardWithDeckImage}
+                      faceUp={faceUp}
+                      reversed={c.reversed}
+                      interactive={true}
+                      size={spread.count > 5 ? 'sm' : spread.count > 3 ? 'md' : 'lg'}
+                      dealDelay={i * 300}
+                      label={pos?.title}
+                      hint={pos?.hint}
+                    />
+                  );
+                })}
+              </div>
+
+              {/* Фоновая карта (извлекаемая с самого дна колоды) */}
+              {(() => {
+                const bottomCardData = cards.find((c) => c.position === 0);
+                if (!bottomCardData) return null;
+                const card = getCard(bottomCardData.id);
                 const faceUp = phase === 'reading';
                 const cardWithDeckImage = {
                   ...card,
                   image: getCardImageUrl(card.id, deckId),
                 };
                 return (
-                  <Card3D
-                    key={c.id}
-                    card={cardWithDeckImage}
-                    faceUp={faceUp}
-                    reversed={false}
-                    interactive={true}
-                    size={spread.count > 5 ? 'sm' : spread.count > 3 ? 'md' : 'lg'}
-                    dealDelay={i * 300}
-                    label={pos?.title}
-                    hint={pos?.hint}
-                  />
+                  <div className="flex flex-col items-center mt-6">
+                    <p className="mb-2 text-xs font-display text-gold/60 uppercase tracking-wider">Фоновая карта (дно колоды)</p>
+                    <Card3D
+                      card={cardWithDeckImage}
+                      faceUp={faceUp}
+                      reversed={bottomCardData.reversed}
+                      interactive={true}
+                      size="md"
+                      dealDelay={100}
+                      label="Дно колоды"
+                      hint="Скрытые мотивы и фоновое влияние"
+                    />
+                  </div>
                 );
-              })}
+              })()}
             </div>
           )}
 
