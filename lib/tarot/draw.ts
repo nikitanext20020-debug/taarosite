@@ -64,11 +64,9 @@ export function drawCards(
   const picked: TarotCard[] = shuffled.slice(0, spread.count);
 
   const cards: DrawnCard[] = picked.map((card, i) => {
-    // Реверсируем карту случайным образом (например, с вероятностью 20%)
-    const reversed = rng() < 0.2;
     return {
       card,
-      reversed,
+      reversed: false,
       position: i + 1,
     };
   });
@@ -76,10 +74,9 @@ export function drawCards(
   // Добавляем фоновую карту со дна колоды только для расклада "Три карты" (three-cards)
   if (spread.id === 'three-cards') {
     const bottomCard = shuffled[shuffled.length - 1];
-    const bottomReversed = rng() < 0.2;
     cards.push({
       card: bottomCard,
-      reversed: bottomReversed,
+      reversed: false,
       position: 0,
     });
   }
