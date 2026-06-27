@@ -31,6 +31,7 @@ export default function DivineClient({ spread }: { spread: SpreadType }) {
   const [question, setQuestion] = useState('');
   const [userName, setUserName] = useState('');
   const [targetName, setTargetName] = useState('');
+  const [previewCards, setPreviewCards] = useState<Record<string, number[]>>({});
   const [deckId, setDeckId] = useState<string>(DEFAULT_DECK_ID);
   const [tgUser, setTgUser] = useState<TgUser | null>(null);
   const [webUserId, setWebUserId] = useState<string | null>(null);
@@ -69,6 +70,24 @@ export default function DivineClient({ spread }: { spread: SpreadType }) {
     audioRef.current = new Audio('https://assets.mixkit.co/music/preview/mixkit-mystical-mystic-ambient-1160.mp3');
     audioRef.current.loop = true;
     audioRef.current.volume = 0.35;
+
+    // Генерируем по 4 случайных ID карт для каждой колоды
+    const generated: Record<string, number[]> = {};
+    for (const d of DECKS) {
+      const ids: number[] = [];
+      while (ids.length < 4) {
+        const rand = Math.floor(Math.random() * 78);
+        if (!ids.includes(rand)) {
+          // И для Уэйт-Смит пропускаем отсутствующие Старшие Арканы (0-7 и 17)
+          if (d.id === 'waite-smith' && (rand <= 7 || rand === 17)) {
+            continue;
+          }
+          ids.push(rand);
+        }
+      }
+      generated[d.id] = ids;
+    }
+    setPreviewCards(generated);
 
     return () => {
       audioRef.current?.pause();
@@ -243,12 +262,12 @@ export default function DivineClient({ spread }: { spread: SpreadType }) {
                         : 'border-white/10 bg-midnight/40 hover:border-gold/30'
                     }`}
                   >
-                    {/* Миниатюра (Лицо карты «Солнце» для превью стиля) */}
+                    {/* Миниатюра (Лицо случайной карты для превью стиля) */}
                     <div className="flex-shrink-0 mt-0.5">
                       <div className="w-8 h-12 rounded overflow-hidden border border-white/10 relative shadow-[0_2px_6px_rgba(0,0,0,0.3)]">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
-                          src={getCardImageUrl(19, deck.id)}
+                          src={getCardImageUrl(previewCards[deck.id]?.[0] ?? 19, deck.id)}
                           alt={deck.name}
                           className="h-full w-full object-cover"
                         />
@@ -272,7 +291,7 @@ export default function DivineClient({ spread }: { spread: SpreadType }) {
                       {/* Превью-галерея карт при выборе колоды */}
                       {deckId === deck.id && (
                         <div className="mt-3 flex gap-1.5 animate-fadeIn">
-                          {[10, 19, 22, 50].map((cardId) => {
+                          {(previewCards[deck.id] || [10, 19, 22, 50]).map((cardId) => {
                             const imgUrl = getCardImageUrl(cardId, deck.id);
                             return (
                               <div key={cardId} className="w-9 h-14 rounded overflow-hidden border border-gold/25 relative shadow-mystic group hover:border-gold hover:scale-105 transition-all duration-300">
