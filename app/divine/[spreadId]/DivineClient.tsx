@@ -410,7 +410,6 @@ export default function DivineClient({ spread }: { spread: SpreadType }) {
             const revealCards: RevealCard[] = mainCards.map((c, i) => ({
               card: { ...getCard(c.id), image: getCardImageUrl(c.id, deckId) },
               reversed: c.reversed,
-              label: positions[i]?.title,
             }));
 
             const revealBottomCard: RevealCard | null = bottomCardData
@@ -443,7 +442,6 @@ export default function DivineClient({ spread }: { spread: SpreadType }) {
               <div className="flex flex-row flex-wrap justify-center items-end gap-4 sm:gap-6">
                 {cards.filter((c) => c.position !== 0).map((c, i) => {
                   const card = getCard(c.id);
-                  const pos = positions[c.position - 1] || positions[i];
                   const faceUp = phase === 'reading';
                   const cardWithDeckImage = {
                     ...card,
@@ -458,8 +456,6 @@ export default function DivineClient({ spread }: { spread: SpreadType }) {
                       interactive={true}
                       size={spread.count > 5 ? 'sm' : spread.count > 3 ? 'md' : 'lg'}
                       dealDelay={i * 300}
-                      label={pos?.title}
-                      hint={pos?.hint}
                     />
                   );
                 })}
@@ -477,7 +473,7 @@ export default function DivineClient({ spread }: { spread: SpreadType }) {
                 };
                 return (
                   <div className="flex flex-col items-center mt-6">
-                    <p className="mb-2 text-xs font-display text-gold/60 uppercase tracking-wider">Фоновая карта (дно колоды)</p>
+                    <p className="mb-2 text-xs font-display text-gold/60 uppercase tracking-wider">Фоновая карта</p>
                     <Card3D
                       card={cardWithDeckImage}
                       faceUp={faceUp}
@@ -485,8 +481,8 @@ export default function DivineClient({ spread }: { spread: SpreadType }) {
                       interactive={true}
                       size="md"
                       dealDelay={100}
-                      label="Дно колоды"
-                      hint="Скрытые мотивы и фоновое влияние"
+                      label="Фоновая карта"
+                      hint="Фоновая энергия всего расклада"
                     />
                   </div>
                 );

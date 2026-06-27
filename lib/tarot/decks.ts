@@ -18,8 +18,8 @@ export interface DeckMeta {
   bestFor: string[];
   /** Папка в public/decks/[folder] */
   folder: string;
-  /** Расширение файлов карт: 'gif' | 'jpg' | 'png' | 'webp' */
-  cardExtension: 'gif' | 'jpg' | 'png' | 'webp';
+  /** Расширение файлов карт: 'avif' | 'gif' | 'jpg' | 'png' | 'webp' */
+  cardExtension: 'avif' | 'gif' | 'jpg' | 'png' | 'webp';
 }
 
 export const DECKS: DeckMeta[] = [
@@ -30,7 +30,7 @@ export const DECKS: DeckMeta[] = [
       'Психологичная, тёмная и глубокая колода. Раскрывает теневые аспекты личности. Лучше всего для вопросов об отношениях, самопознания и сложных жизненных ситуаций.',
     bestFor: ['relationship', 'celtic-cross', 'five-cards', 'horseshoe'],
     folder: 'deviant-moon',
-    cardExtension: 'gif',
+    cardExtension: 'avif',
   },
   {
     id: 'manara',
@@ -39,7 +39,7 @@ export const DECKS: DeckMeta[] = [
       'Чувственная, эротическая колода, созданная итальянским художником Мило Манара. Идеально подходит для раскладов на любовь, отношения, чувства и сексуальность.',
     bestFor: ['relationship', 'three-cards', 'five-cards'],
     folder: 'Манара',
-    cardExtension: 'gif',
+    cardExtension: 'avif',
   },
   {
     id: 'waite-smith',
@@ -48,7 +48,7 @@ export const DECKS: DeckMeta[] = [
       'Классическая универсальная колода Райдера-Уэйта-Смит. Превосходно подходит для любых жизненных ситуаций, работы, финансов и общего анализа.',
     bestFor: ['celtic-cross', 'five-cards', 'horseshoe', 'yes-no', 'three-cards'],
     folder: 'Уэйт-Смит',
-    cardExtension: 'webp',
+    cardExtension: 'avif',
   },
 ];
 
@@ -68,13 +68,13 @@ export function getCardImageUrl(cardId: number, deckId?: string | null): string 
     if (card) {
       // Фолбэк для отсутствующих Старших Арканов (0-7 и 17)
       if (card.suit === 'major' && (cardId <= 7 || cardId === 17)) {
-        return `/decks/deviant-moon/${cardId}.gif`;
+        return `/decks/deviant-moon/${cardId}.avif`;
       }
 
       // Маппинг имен файлов для Уэйт-Смит
       if (card.suit === 'major') {
         const num = cardId.toString().padStart(2, '0');
-        return `/decks/${deck.folder}/major_${num}.webp`;
+        return `/decks/${deck.folder}/major_${num}.avif`;
       } else {
         let numStr = '';
         if (card.rank === 'ace') numStr = '01';
@@ -84,15 +84,15 @@ export function getCardImageUrl(cardId: number, deckId?: string | null): string 
         else if (card.rank === 'king') numStr = '14';
         else numStr = card.rank!.padStart(2, '0');
 
-        return `/decks/${deck.folder}/${card.suit}_${numStr}.webp`;
+        return `/decks/${deck.folder}/${card.suit}_${numStr}.avif`;
       }
     }
   }
 
   if (deck.id === 'manara') {
-    // В колоде Манара файлы используют двузначные индексы: 00.gif, 01.gif...
+    // В колоде Манара файлы используют двузначные индексы: 00.avif, 01.avif...
     const fileId = cardId.toString().padStart(2, '0');
-    return `/decks/${deck.folder}/${fileId}.gif`;
+    return `/decks/${deck.folder}/${fileId}.avif`;
   }
 
   return `/decks/${deck.folder}/${cardId}.${deck.cardExtension}`;

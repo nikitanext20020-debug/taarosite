@@ -71,7 +71,7 @@ export async function POST(req: Request) {
       return {
         name: card.name,
         reversed: c.reversed,
-        positionTitle: pos?.title ?? `Позиция ${c.position}`,
+        positionTitle: pos?.title ?? (c.position === 0 ? 'Фоновая карта' : `Позиция ${c.position}`),
       };
     });
 

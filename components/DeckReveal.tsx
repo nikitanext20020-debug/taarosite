@@ -140,21 +140,18 @@ export default function DeckReveal({
     }
 
     await sleep(420);
-
     // переворот колоды + карта со дна
     if (bottomCard) {
       if (!aliveRef.current) return;
       setDeckFlipped(true);
-      await sleep(950);
+      await sleep(1300); // подождем завершения переворота колоды
       const bi = n; // индекс нижней карты
-      patch(bi, { on: true });
+      patch(bi, { on: true, flipped: true }); // сразу лицом вверх!
       patch(bi, { ty: DECK_POS.y - 70, sc: 1.08 });
       setLayersLeft((l) => Math.max(1, l - 1));
       await sleep(380);
       patch(bi, { tx: ASIDE.x, ty: ASIDE.y, rot: 0 });
       await sleep(520);
-      patch(bi, { flipped: true });
-      await sleep(560);
       patch(bi, { sc: 1 });
       await sleep(220);
     }
@@ -185,13 +182,15 @@ export default function DeckReveal({
       "translate(" +
       DECK_POS.x +
       "px, " +
-      DECK_POS.y +
+      (deckFlipped ? DECK_POS.y - 30 : DECK_POS.y) +
       "px) rotateY(" +
       (deckFlipped ? 180 : 0) +
+      "deg) rotateX(" +
+      (deckFlipped ? 15 : 0) +
       "deg) rotateZ(" +
       deckRot +
       "deg)",
-    transition: "transform 1s " + EASE,
+    transition: "transform 1.3s cubic-bezier(0.34, 1.56, 0.64, 1)",
   };
 
   return (
@@ -209,9 +208,14 @@ export default function DeckReveal({
                   "translate(" + i * 0.7 + "px, " + -i * 0.7 + "px)",
                 zIndex: i,
               };
+              // Если колода перевернута лицом вверх, верхний слой колоды должен показывать лицо фоновой карты!
+              const isTopLayerOfFlippedDeck = deckFlipped && i === layersLeft - 1;
               return (
                 <div key={i} className="dr-layer" style={layerStyle}>
-                  {isVideoBack ? (
+                  {isTopLayerOfFlippedDeck && bottomCard ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={bottomCard.card.image} alt="" className="w-full h-full object-cover" />
+                  ) : isVideoBack ? (
                     <video src={backSrc} autoPlay loop muted playsInline className="w-full h-full object-cover" />
                   ) : (
                     // eslint-disable-next-line @next/next/no-img-element
