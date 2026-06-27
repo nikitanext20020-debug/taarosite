@@ -23,22 +23,7 @@ export default function HomePage() {
   return (
     <main className="relative">
       {/* ── HERO ───────────────────────────────────── */}
-      <section className="relative flex min-h-[88vh] flex-col items-center justify-center px-4 text-center overflow-hidden">
-        {/* Mystical background overlay */}
-        <div
-          className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat opacity-[0.25]"
-          style={{ backgroundImage: 'url("/mystical_hero_bg.png")' }}
-        />
-        {/* Radial darkness gradient overlay */}
-        <div 
-          className="absolute inset-0 z-0" 
-          style={{ background: 'radial-gradient(circle at center, transparent 0%, rgba(7, 9, 15, 0.95) 100%)' }}
-        />
-        <div 
-          className="absolute inset-0 z-0" 
-          style={{ background: 'linear-gradient(to bottom, transparent 0%, rgba(7, 9, 15, 0.5) 50%, rgba(7, 9, 15, 1) 100%)' }}
-        />
-
+      <section className="relative flex min-h-[88vh] flex-col items-center justify-center px-4 text-center">
         <div className="relative z-10 flex flex-col items-center">
           <p className="mb-3 font-display text-sm uppercase tracking-[0.3em] text-gold/70">
             {site.fullName}

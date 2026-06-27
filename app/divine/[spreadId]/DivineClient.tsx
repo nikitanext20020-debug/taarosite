@@ -210,6 +210,23 @@ export default function DivineClient({ spread }: { spread: SpreadType }) {
 
   return (
     <main className="container-mystic min-h-screen py-8 sm:py-12 relative overflow-hidden">
+      {/* Тематический фон для темы Любви с мягкой анимацией перехода */}
+      <div
+        className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat transition-opacity duration-700 pointer-events-none"
+        style={{
+          backgroundImage: 'url("/tarot_love_theme.png")',
+          opacity: theme === 'love' ? 0.18 : 0,
+        }}
+      />
+      {theme === 'love' && (
+        <div 
+          className="absolute inset-0 z-0 pointer-events-none" 
+          style={{ 
+            background: 'radial-gradient(circle at center, transparent 0%, rgba(7, 9, 15, 0.95) 100%), linear-gradient(to bottom, transparent 0%, rgba(7, 9, 15, 0.5) 50%, rgba(7, 9, 15, 1) 100%)' 
+          }}
+        />
+      )}
+
       {/* Дыхание Бездны на фоне */}
       <div className="void-glow-bg" />
 
