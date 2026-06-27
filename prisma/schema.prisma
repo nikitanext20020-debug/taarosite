@@ -54,6 +54,11 @@ model Reading {
   /// Выбранная колода (deck.id из lib/tarot/decks.ts)
   deckId        String?
 
+  /// Имя кверента (пользователя)
+  userName      String?
+  /// Имя партнера / о ком вопрос (если задано)
+  targetName    String?
+
   /// Seed тасовки (для воспроизведения) — строка, чтобы не упираться в лимит Int
   seed          String
   /// Вытянутые карты (JSON-строка: [{id,name,reversed,position}])

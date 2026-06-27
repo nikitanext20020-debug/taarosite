@@ -29,6 +29,8 @@ export default function DivineClient({ spread }: { spread: SpreadType }) {
   const [phase, setPhase] = useState<Phase>('setup');
   const [theme, setTheme] = useState<string>('general');
   const [question, setQuestion] = useState('');
+  const [userName, setUserName] = useState('');
+  const [targetName, setTargetName] = useState('');
   const [deckId, setDeckId] = useState<string>(DEFAULT_DECK_ID);
   const [tgUser, setTgUser] = useState<TgUser | null>(null);
   const [webUserId, setWebUserId] = useState<string | null>(null);
@@ -87,6 +89,12 @@ export default function DivineClient({ spread }: { spread: SpreadType }) {
 
   // ── Старт расклада ──────────────────────────────────────
   async function startReading() {
+    if (!userName.trim()) {
+      setError('Пожалуйста, введите ваше имя');
+      haptic('warning');
+      return;
+    }
+
     setLoading(true);
     setError(null);
     haptic('light');
@@ -102,6 +110,8 @@ export default function DivineClient({ spread }: { spread: SpreadType }) {
           theme,
           question: question.trim() || undefined,
           deckId,
+          userName: userName.trim(),
+          targetName: targetName.trim() || undefined,
           tgUser: tgUser ?? undefined,
           webUserId: webUserId ?? undefined,
         }),
@@ -334,6 +344,38 @@ export default function DivineClient({ spread }: { spread: SpreadType }) {
               ))}
             </div>
           )}
+
+          {/* ── Поля имен ── */}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <label className="mb-2 block font-display text-sm text-moon/70">
+                Ваше имя <span className="text-rose-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={userName}
+                onChange={(e) => {
+                  setUserName(e.target.value);
+                  if (error === 'Пожалуйста, введите ваше имя') setError(null);
+                }}
+                placeholder="Как вас зовут?"
+                className="w-full rounded-xl border border-white/10 bg-midnight/70 p-4 text-moon placeholder:text-moon/30 focus:border-gold/50 focus:outline-none"
+                required
+              />
+            </div>
+            <div>
+              <label className="mb-2 block font-display text-sm text-moon/70">
+                Имя партнёра <span className="text-moon/30">(необязательно)</span>
+              </label>
+              <input
+                type="text"
+                value={targetName}
+                onChange={(e) => setTargetName(e.target.value)}
+                placeholder="О ком ваш вопрос?"
+                className="w-full rounded-xl border border-white/10 bg-midnight/70 p-4 text-moon placeholder:text-moon/30 focus:border-gold/50 focus:outline-none"
+              />
+            </div>
+          </div>
 
           {/* ── Поле вопроса ── */}
           <div>

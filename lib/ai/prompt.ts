@@ -66,11 +66,20 @@ export function buildUserPrompt(params: {
   spreadName: string;
   positions: { title: string; hint: string }[];
   cards: { name: string; reversed: boolean; positionTitle: string }[];
+  userName?: string;
+  targetName?: string;
 }): string {
-  const { question, theme, spreadName, positions, cards } = params;
+  const { question, theme, spreadName, positions, cards, userName, targetName } = params;
 
   const lines: string[] = [];
   lines.push(`# Расклад: ${spreadName}`);
+
+  if (userName) {
+    lines.push(`Имя того, кто гадает (кверент): ${userName}.`);
+  }
+  if (targetName) {
+    lines.push(`Имя партнёра / о ком вопрос: ${targetName}.`);
+  }
 
   if (theme) lines.push(`Тема: ${theme}.`);
   if (question) lines.push(`Вопрос: «${question}»`);
@@ -87,6 +96,9 @@ export function buildUserPrompt(params: {
 
   lines.push('');
   lines.push('Проанализируй по структуре из системного промпта и обязательно добавь важное напоминание в конце.');
+  if (userName) {
+    lines.push(`В трактовке обращайся к кверенту по имени ${userName}. ${targetName ? `Учитывай взаимодействие и отношения с партнёром по имени ${targetName}.` : ''}`);
+  }
 
   return lines.join('\n');
 }

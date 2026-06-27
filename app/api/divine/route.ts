@@ -17,11 +17,13 @@ export const runtime = 'nodejs';
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { spreadId, theme, question, tgUser, webUserId, deckId } = body as {
+    const { spreadId, theme, question, tgUser, webUserId, deckId, userName, targetName } = body as {
       spreadId: string;
       theme?: string;
       question?: string;
       deckId?: string;
+      userName?: string;
+      targetName?: string;
       tgUser?: { id: number; first_name?: string; username?: string };
       webUserId?: string;
     };
@@ -60,6 +62,8 @@ export async function POST(req: Request) {
       theme: theme ?? null,
       question: question ?? null,
       deckId: deckId ?? null,
+      userName: userName ?? null,
+      targetName: targetName ?? null,
       seed: String(seed),
       cards: JSON.stringify(serialized),
       interpretation: null,

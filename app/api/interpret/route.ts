@@ -81,6 +81,8 @@ export async function POST(req: Request) {
       spreadName: spread.name,
       positions: spread.positions,
       cards: cardList,
+      userName: reading.userName ?? undefined,
+      targetName: reading.targetName ?? undefined,
     });
 
     const deck = getDeck(reading.deckId);
