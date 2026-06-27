@@ -235,13 +235,28 @@ export default function DivineClient({ spread }: { spread: SpreadType }) {
                   >
                     {/* Миниатюра рубашки */}
                     <div className="flex-shrink-0 mt-0.5">
-                      <div className="w-8 h-12 rounded overflow-hidden border border-white/10">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={getBackImageUrl(deck.id)}
-                          alt={deck.name}
-                          className="h-full w-full object-cover"
-                        />
+                      <div className="w-8 h-12 rounded overflow-hidden border border-white/10 relative">
+                        {(() => {
+                          const backUrl = getBackImageUrl(deck.id);
+                          const isVideo = backUrl.endsWith('.webm') || backUrl.endsWith('.mp4');
+                          return isVideo ? (
+                            <video
+                              src={backUrl}
+                              autoPlay
+                              loop
+                              muted
+                              playsInline
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={backUrl}
+                              alt={deck.name}
+                              className="h-full w-full object-cover"
+                            />
+                          );
+                        })()}
                       </div>
                     </div>
                     <div className="flex-1 min-w-0">
@@ -347,28 +362,35 @@ export default function DivineClient({ spread }: { spread: SpreadType }) {
       )}
 
       {/* ═══ SHUFFLING: анимация тасования колоды ═══ */}
-      {phase === 'shuffling' && (
-        <div className="mx-auto max-w-md py-12 flex flex-col items-center gap-6 relative z-10">
-          <div className="relative h-44 w-28 scene-3d flex items-center justify-center">
-            {/* Три карты в стопке с анимацией вылета */}
-            <div className="absolute inset-0 rounded-xl border border-gold/40 shadow-card bg-midnight overflow-hidden shuffle-card-l">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={getBackImageUrl(deckId)} alt="Тасовка" className="h-full w-full object-cover" />
+      {phase === 'shuffling' && (() => {
+        const backUrl = getBackImageUrl(deckId);
+        const isVideo = backUrl.endsWith('.webm') || backUrl.endsWith('.mp4');
+        const renderBack = () => isVideo ? (
+          <video src={backUrl} autoPlay loop muted playsInline className="h-full w-full object-cover" />
+        ) : (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={backUrl} alt="Тасовка" className="h-full w-full object-cover" />
+        );
+        return (
+          <div className="mx-auto max-w-md py-12 flex flex-col items-center gap-6 relative z-10">
+            <div className="relative h-44 w-28 scene-3d flex items-center justify-center">
+              {/* Три карты в стопке с анимацией вылета */}
+              <div className="absolute inset-0 rounded-xl border border-gold/40 shadow-card bg-midnight overflow-hidden shuffle-card-l">
+                {renderBack()}
+              </div>
+              <div className="absolute inset-0 rounded-xl border border-gold/40 shadow-card bg-midnight overflow-hidden shuffle-card-r">
+                {renderBack()}
+              </div>
+              <div className="absolute inset-0 rounded-xl border border-gold/50 shadow-glow bg-midnight overflow-hidden shuffle-card-c">
+                {renderBack()}
+              </div>
             </div>
-            <div className="absolute inset-0 rounded-xl border border-gold/40 shadow-card bg-midnight overflow-hidden shuffle-card-r">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={getBackImageUrl(deckId)} alt="Тасовка" className="h-full w-full object-cover" />
-            </div>
-            <div className="absolute inset-0 rounded-xl border border-gold/50 shadow-glow bg-midnight overflow-hidden shuffle-card-c">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={getBackImageUrl(deckId)} alt="Тасовка" className="h-full w-full object-cover" />
-            </div>
+            <p className="animate-pulse text-center font-display text-lg text-gold-bright">
+              🌙 {site.name} тасует колоду карт...
+            </p>
           </div>
-          <p className="animate-pulse text-center font-display text-lg text-gold-bright">
-            🌙 {site.name} тасует колоду карт...
-          </p>
-        </div>
-      )}
+        );
+      })()}
 
       {/* ═══ DEALING / PAYWALL / READING: анимация раздачи и paywall ═══ */}
       {(phase === 'dealing' || phase === 'paywall' || phase === 'reading') && cards.length > 0 && (

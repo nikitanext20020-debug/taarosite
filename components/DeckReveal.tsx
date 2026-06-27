@@ -69,6 +69,7 @@ export default function DeckReveal({
   cardBack,
 }: DeckRevealProps) {
   const backSrc = cardBack ?? CARD_BACK;
+  const isVideoBack = backSrc.endsWith('.webm') || backSrc.endsWith('.mp4');
 
   const all: RevealCard[] = bottomCard
     ? [...spreadCards, bottomCard]
@@ -210,8 +211,12 @@ export default function DeckReveal({
               };
               return (
                 <div key={i} className="dr-layer" style={layerStyle}>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={backSrc} alt="" />
+                  {isVideoBack ? (
+                    <video src={backSrc} autoPlay loop muted playsInline className="w-full h-full object-cover" />
+                  ) : (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={backSrc} alt="" />
+                  )}
                 </div>
               );
             })}
@@ -249,8 +254,12 @@ export default function DeckReveal({
               >
                 <div className="dr-inner" style={innerStyle}>
                   <div className="dr-face dr-back">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={backSrc} alt="" />
+                    {isVideoBack ? (
+                      <video src={backSrc} autoPlay loop muted playsInline className="w-full h-full object-cover" />
+                    ) : (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={backSrc} alt="" />
+                    )}
                   </div>
                   <div className="dr-face dr-front">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
