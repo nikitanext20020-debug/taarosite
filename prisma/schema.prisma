@@ -51,6 +51,8 @@ model Reading {
   spreadType    String
   theme         String?
   question      String?
+  /// Выбранная колода (deck.id из lib/tarot/decks.ts)
+  deckId        String?
 
   /// Seed тасовки (для воспроизведения) — строка, чтобы не упираться в лимит Int
   seed          String

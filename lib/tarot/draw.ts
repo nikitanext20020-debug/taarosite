@@ -65,7 +65,7 @@ export function drawCards(
 
   const cards: DrawnCard[] = picked.map((card, i) => ({
     card,
-    reversed: rng() < 0.35, // ~35% карт перевёрнуты — добавляет глубины
+    reversed: false, // карты всегда в прямом положении
     position: i + 1,
   }));
 

@@ -15,8 +15,9 @@ import { checkSubscription } from '@/lib/telegram/subscription';
 import { upsertUser, consumeFreeRead } from '@/lib/user-service';
 import { getSpread } from '@/lib/tarot/spreads';
 import { getCard } from '@/lib/tarot/deck';
+import { getDeck } from '@/lib/tarot/decks';
 import { interpretReading } from '@/lib/ai';
-import { SYSTEM_PROMPT, buildUserPrompt } from '@/lib/ai/prompt';
+import { buildSystemPrompt, buildUserPrompt } from '@/lib/ai/prompt';
 import { site } from '@/lib/site';
 
 export const runtime = 'nodejs';
@@ -82,8 +83,11 @@ export async function POST(req: Request) {
       cards: cardList,
     });
 
+    const deck = getDeck(reading.deckId);
+    const systemPrompt = buildSystemPrompt(deck.name);
+
     const { text, meta } = await interpretReading({
-      systemPrompt: SYSTEM_PROMPT,
+      systemPrompt,
       userPrompt,
     });
 

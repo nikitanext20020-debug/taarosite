@@ -3,8 +3,10 @@
 import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 import Card3D from '@/components/Card3D';
-import { THEMES, type SpreadType } from '@/lib/tarot/spreads';
+import DeckReveal, { type RevealCard } from '@/components/DeckReveal';
+import { THEMES, QUESTION_PRESETS, type SpreadType } from '@/lib/tarot/spreads';
 import { getCard } from '@/lib/tarot/deck';
+import { DECKS, DEFAULT_DECK_ID, getCardImageUrl, getBackImageUrl } from '@/lib/tarot/decks';
 import { site, tgLinks } from '@/lib/site';
 import { initTelegram, haptic, openTgLink, isMiniApp } from '@/components/TgInitData';
 import type { TgUser } from '@/lib/telegram/subscription';
@@ -27,6 +29,7 @@ export default function DivineClient({ spread }: { spread: SpreadType }) {
   const [phase, setPhase] = useState<Phase>('setup');
   const [theme, setTheme] = useState<string>('general');
   const [question, setQuestion] = useState('');
+  const [deckId, setDeckId] = useState<string>(DEFAULT_DECK_ID);
   const [tgUser, setTgUser] = useState<TgUser | null>(null);
   const [webUserId, setWebUserId] = useState<string | null>(null);
   const [inMiniApp, setInMiniApp] = useState(false);
@@ -38,6 +41,8 @@ export default function DivineClient({ spread }: { spread: SpreadType }) {
   const [freeReadsLeft, setFreeReadsLeft] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // true после того как DeckReveal завершил анимацию
+  const [deckRevealed, setDeckRevealed] = useState(false);
 
   // Стейты звука
   const [isMuted, setIsMuted] = useState(true);
@@ -85,6 +90,7 @@ export default function DivineClient({ spread }: { spread: SpreadType }) {
     setLoading(true);
     setError(null);
     haptic('light');
+    setDeckRevealed(false);
     setPhase('shuffling');
 
     try {
@@ -95,6 +101,7 @@ export default function DivineClient({ spread }: { spread: SpreadType }) {
           spreadId: spread.id,
           theme,
           question: question.trim() || undefined,
+          deckId,
           tgUser: tgUser ?? undefined,
           webUserId: webUserId ?? undefined,
         }),
@@ -107,19 +114,21 @@ export default function DivineClient({ spread }: { spread: SpreadType }) {
       setPositions(data.positions);
       setFreeReadsLeft(data.freeAvailable ? 1 : 0);
 
-      // Анимация раздачи
+      // Запускаем анимацию DeckReveal; reveal() вызовется в onDeckComplete
       setPhase('dealing');
       haptic('success');
-      await wait(800 + spread.count * 300);
-
-      // Сразу раскрываем расклад, минуя paywall в демо-режиме
-      await reveal(data.readingId);
     } catch (e) {
       setError((e as Error).message);
       setPhase('setup');
     } finally {
       setLoading(false);
     }
+  }
+
+  // ── Колбэк: DeckReveal завершил анимацию ────────────────
+  async function onDeckComplete() {
+    setDeckRevealed(true);
+    await reveal(readingId ?? undefined);
   }
 
   // ── Проверка подписки (Заглушка) ────────────────────────
@@ -164,6 +173,11 @@ export default function DivineClient({ spread }: { spread: SpreadType }) {
     }
   }
 
+  // Текущая колода
+  const selectedDeck = DECKS.find((d) => d.id === deckId) ?? DECKS[0];
+  // Пресеты вопросов для выбранной темы
+  const presets = QUESTION_PRESETS[theme] ?? [];
+
   return (
     <main className="container-mystic min-h-screen py-8 sm:py-12 relative overflow-hidden">
       {/* Дыхание Бездны на фоне */}
@@ -198,9 +212,60 @@ export default function DivineClient({ spread }: { spread: SpreadType }) {
         </div>
       )}
 
-      {/* ═══ SETUP: выбор темы и вопроса ═══ */}
+      {/* ═══ SETUP: выбор колоды, темы и вопроса ═══ */}
       {phase === 'setup' && (
-        <div className="mx-auto max-w-lg space-y-6 relative z-10">
+        <div className="mx-auto max-w-lg space-y-7 relative z-10">
+
+          {/* ── Выбор колоды ── */}
+          {DECKS.length > 0 && (
+            <div>
+              <label className="mb-3 block font-display text-sm text-moon/70">
+                Выбери колоду
+              </label>
+              <div className="flex flex-col gap-2">
+                {DECKS.map((deck) => (
+                  <button
+                    key={deck.id}
+                    onClick={() => { setDeckId(deck.id); haptic('light'); }}
+                    className={`flex items-start gap-4 rounded-xl border p-3 text-left transition-all duration-200 ${
+                      deckId === deck.id
+                        ? 'border-gold/60 bg-gold/10 shadow-[0_0_16px_rgba(200,160,60,0.15)]'
+                        : 'border-white/10 bg-midnight/40 hover:border-gold/30'
+                    }`}
+                  >
+                    {/* Миниатюра рубашки */}
+                    <div className="flex-shrink-0 mt-0.5">
+                      <div className="w-8 h-12 rounded overflow-hidden border border-white/10">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={getBackImageUrl(deck.id)}
+                          alt={deck.name}
+                          className="h-full w-full object-cover"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className={`font-display text-sm leading-tight ${deckId === deck.id ? 'text-gold-bright' : 'text-moon'}`}>
+                          {deck.name}
+                        </span>
+                        {deckId === deck.id && (
+                          <span className="rounded-full bg-gold/20 px-2 py-0.5 text-[9px] text-gold">
+                            Выбрана
+                          </span>
+                        )}
+                      </div>
+                      <p className="mt-0.5 text-[11px] leading-relaxed text-moon/50 line-clamp-2">
+                        {deck.description}
+                      </p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ── Выбор темы ── */}
           <div>
             <label className="mb-3 block font-display text-sm text-moon/70">
               Тема вопроса
@@ -226,14 +291,40 @@ export default function DivineClient({ spread }: { spread: SpreadType }) {
             </div>
           </div>
 
+          {/* ── Пресеты вопросов ── */}
+          {presets.length > 0 && (
+            <div
+              className="flex flex-wrap gap-2"
+              style={{ animation: 'rise 0.3s ease-out forwards' }}
+            >
+              {presets.map((q) => (
+                <button
+                  key={q}
+                  onClick={() => {
+                    setQuestion(q);
+                    haptic('light');
+                  }}
+                  className={`rounded-full border px-3 py-1.5 text-xs transition-all duration-200 ${
+                    question === q
+                      ? 'border-gold/60 bg-gold/15 text-gold-bright'
+                      : 'border-white/10 bg-white/5 text-moon/60 hover:border-gold/30 hover:text-moon/80'
+                  }`}
+                >
+                  {q}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* ── Поле вопроса ── */}
           <div>
             <label className="mb-2 block font-display text-sm text-moon/70">
-              Твой вопрос <span className="text-moon/30">(необязательно)</span>
+              Твой вопрос <span className="text-moon/30">(или выбери выше)</span>
             </label>
             <textarea
               value={question}
               onChange={(e) => setQuestion(e.target.value)}
-              placeholder="Например: что меня ждёт в отношениях?"
+              placeholder="Задай свой вопрос картам..."
               rows={3}
               className="w-full resize-none rounded-xl border border-white/10 bg-midnight/70 p-4 text-moon placeholder:text-moon/30 focus:border-gold/50 focus:outline-none"
             />
@@ -261,13 +352,16 @@ export default function DivineClient({ spread }: { spread: SpreadType }) {
           <div className="relative h-44 w-28 scene-3d flex items-center justify-center">
             {/* Три карты в стопке с анимацией вылета */}
             <div className="absolute inset-0 rounded-xl border border-gold/40 shadow-card bg-midnight overflow-hidden shuffle-card-l">
-              <img src="/deck/back.jpg" alt="Тасовка" className="h-full w-full object-cover" />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={getBackImageUrl(deckId)} alt="Тасовка" className="h-full w-full object-cover" />
             </div>
             <div className="absolute inset-0 rounded-xl border border-gold/40 shadow-card bg-midnight overflow-hidden shuffle-card-r">
-              <img src="/deck/back.jpg" alt="Тасовка" className="h-full w-full object-cover" />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={getBackImageUrl(deckId)} alt="Тасовка" className="h-full w-full object-cover" />
             </div>
             <div className="absolute inset-0 rounded-xl border border-gold/50 shadow-glow bg-midnight overflow-hidden shuffle-card-c">
-              <img src="/deck/back.jpg" alt="Тасовка" className="h-full w-full object-cover" />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={getBackImageUrl(deckId)} alt="Тасовка" className="h-full w-full object-cover" />
             </div>
           </div>
           <p className="animate-pulse text-center font-display text-lg text-gold-bright">
@@ -282,32 +376,50 @@ export default function DivineClient({ spread }: { spread: SpreadType }) {
           {/* Мерцающий туман позади карт */}
           <div className="mystic-fog rounded-full opacity-35 filter blur-3xl" />
 
-          <div className="flex flex-row flex-wrap justify-center items-end gap-4 sm:gap-6 relative z-10">
-            {cards.map((c, i) => {
-              const card = getCard(c.id);
-              const pos = positions[i];
-              // Карты раскрываем по фазам (лицо открываем ТОЛЬКО после paywall, в фазе reading)
-              const faceUp = phase === 'reading';
-              return (
-                <Card3D
-                  key={c.id}
-                  card={card}
-                  faceUp={faceUp}
-                  reversed={c.reversed}
-                  interactive={true}
-                  size={spread.count > 5 ? 'sm' : spread.count > 3 ? 'md' : 'lg'}
-                  dealDelay={i * 300}
-                  label={pos?.title}
-                  hint={pos?.hint}
-                />
-              );
-            })}
-          </div>
+          {/* ── DeckReveal: 3D-анимация расклада (только в фазе dealing до завершения) ── */}
+          {phase === 'dealing' && !deckRevealed && (() => {
+            const revealCards: RevealCard[] = cards.map((c, i) => ({
+              card: { ...getCard(c.id), image: getCardImageUrl(c.id, deckId) },
+              reversed: c.reversed,
+              label: positions[i]?.title,
+            }));
+            return (
+              <DeckReveal
+                key={deckId}
+                spreadCards={revealCards}
+                autoPlay
+                cardBack={getBackImageUrl(deckId)}
+                onComplete={onDeckComplete}
+              />
+            );
+          })()}
 
-          {phase === 'dealing' && (
-            <p className="mt-10 animate-pulse text-center font-display text-lg text-gold-bright relative z-10">
-              Карты открываются...
-            </p>
+          {/* ── Сетка Card3D: показывается после DeckReveal или в paywall/reading ── */}
+          {(deckRevealed || phase === 'paywall' || phase === 'reading') && (
+            <div className="flex flex-row flex-wrap justify-center items-end gap-4 sm:gap-6 relative z-10">
+              {cards.map((c, i) => {
+                const card = getCard(c.id);
+                const pos = positions[i];
+                const faceUp = phase === 'reading';
+                const cardWithDeckImage = {
+                  ...card,
+                  image: getCardImageUrl(card.id, deckId),
+                };
+                return (
+                  <Card3D
+                    key={c.id}
+                    card={cardWithDeckImage}
+                    faceUp={faceUp}
+                    reversed={false}
+                    interactive={true}
+                    size={spread.count > 5 ? 'sm' : spread.count > 3 ? 'md' : 'lg'}
+                    dealDelay={i * 300}
+                    label={pos?.title}
+                    hint={pos?.hint}
+                  />
+                );
+              })}
+            </div>
           )}
 
           {/* ═══ PAYWALL (Заглушка) ═══ */}
