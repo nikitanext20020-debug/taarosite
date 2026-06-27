@@ -518,6 +518,7 @@ export default function DivineClient({ spread }: { spread: SpreadType }) {
                       interactive={true}
                       size={spread.count > 5 ? 'sm' : spread.count > 3 ? 'md' : 'lg'}
                       dealDelay={i * 300}
+                      deckId={deckId}
                     />
                   );
                 })}
@@ -545,6 +546,7 @@ export default function DivineClient({ spread }: { spread: SpreadType }) {
                       dealDelay={100}
                       label="Фоновая карта"
                       hint="Фоновая энергия всего расклада"
+                      deckId={deckId}
                     />
                   </div>
                 );

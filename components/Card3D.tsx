@@ -8,6 +8,7 @@
 import { useCallback, useState } from 'react';
 import type { TarotCard } from '@/lib/tarot/types';
 import { CARD_BACK } from '@/lib/tarot/deck';
+import { getCardImageUrl } from '@/lib/tarot/decks';
 
 interface Card3DProps {
   card?: TarotCard;
@@ -19,6 +20,7 @@ interface Card3DProps {
   onClick?: () => void;
   label?: string;
   hint?: string;
+  deckId?: string;
 }
 
 const sizeMap = {
@@ -37,6 +39,7 @@ export default function Card3D({
   onClick,
   label,
   hint,
+  deckId,
 }: Card3DProps) {
   const [tilt, setTilt] = useState({ rx: 0, ry: 0 });
   const [isHovered, setIsHovered] = useState(false);
@@ -125,7 +128,7 @@ export default function Card3D({
               <>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={card.image}
+                  src={getCardImageUrl(card.id, deckId || 'deviant-moon')}
                   alt={card.name}
                   className="h-full w-full object-cover"
                   draggable={false}

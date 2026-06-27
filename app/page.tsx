@@ -5,6 +5,19 @@ import { SPREADS, THEMES } from '@/lib/tarot/spreads';
 import { site, tgLinks } from '@/lib/site';
 import Card3D from '@/components/Card3D';
 import AnimatedEmoji from '@/components/AnimatedEmoji';
+import { DECK } from '@/lib/tarot/deck';
+
+const SPREAD_PREVIEW_CARDS: Record<string, number> = {
+  'three-cards': 10,       // Колесо Фортуны
+  'five-cards': 21,        // Мир
+  'cross': 15,             // Дьявол
+  'yes-no': 8,             // Сила
+  'decision': 1,           // Маг
+  'horseshoe': 7,          // Колесница
+  'celtic-cross': 20,      // Суд
+  'relationship': 6,       // Влюбленные
+  'card-of-the-day': 19,   // Солнце
+};
 
 export default function HomePage() {
   return (
@@ -17,8 +30,14 @@ export default function HomePage() {
           style={{ backgroundImage: 'url("/mystical_hero_bg.png")' }}
         />
         {/* Radial darkness gradient overlay */}
-        <div className="absolute inset-0 z-0 bg-gradient-radial from-transparent to-midnight/90" />
-        <div className="absolute inset-0 z-0 bg-gradient-to-b from-transparent via-midnight/50 to-midnight" />
+        <div 
+          className="absolute inset-0 z-0" 
+          style={{ background: 'radial-gradient(circle at center, transparent 0%, rgba(7, 9, 15, 0.95) 100%)' }}
+        />
+        <div 
+          className="absolute inset-0 z-0" 
+          style={{ background: 'linear-gradient(to bottom, transparent 0%, rgba(7, 9, 15, 0.5) 50%, rgba(7, 9, 15, 1) 100%)' }}
+        />
 
         <div className="relative z-10 flex flex-col items-center">
           <p className="mb-3 font-display text-sm uppercase tracking-[0.3em] text-gold/70">
@@ -68,7 +87,12 @@ export default function HomePage() {
               style={{ animation: 'rise 0.5s ease-out forwards', animationDelay: `${i * 60}ms`, opacity: 0 }}
             >
               <div className="flex-shrink-0 transition-transform duration-300 group-hover:scale-105">
-                <Card3D faceUp={false} size="sm" interactive={false} />
+                <Card3D 
+                  card={DECK[SPREAD_PREVIEW_CARDS[s.id] ?? 19]} 
+                  faceUp={true} 
+                  size="sm" 
+                  interactive={false} 
+                />
               </div>
               <div className="flex-1 min-w-0 flex flex-col justify-between">
                 <div>
