@@ -210,22 +210,26 @@ export default function DivineClient({ spread }: { spread: SpreadType }) {
 
   return (
     <main className="container-mystic min-h-screen py-8 sm:py-12 relative overflow-hidden">
-      {/* Тематический фон для темы Любви на весь экран с мягкой анимацией перехода */}
-      <div
-        className="fixed inset-0 z-0 bg-cover bg-center bg-no-repeat transition-opacity duration-700 pointer-events-none w-screen h-screen"
-        style={{
-          backgroundImage: 'url("/tarot_love_theme.png")',
-          opacity: theme === 'love' ? 0.18 : 0,
-        }}
-      />
-      {theme === 'love' && (
-        <div 
-          className="fixed inset-0 z-0 pointer-events-none w-screen h-screen" 
-          style={{ 
-            background: 'radial-gradient(circle at center, transparent 0%, rgba(7, 9, 15, 0.95) 100%), linear-gradient(to bottom, transparent 0%, rgba(7, 9, 15, 0.5) 50%, rgba(7, 9, 15, 1) 100%)' 
+      {/* Тематические фоны для каждой темы с мягким перекрестным затуханием (fade-in/out) */}
+      {(['love', 'career', 'money', 'self', 'general'] as const).map((t) => (
+        <div
+          key={t}
+          className="fixed inset-0 z-0 bg-cover bg-center bg-no-repeat transition-opacity duration-1000 pointer-events-none w-screen h-screen"
+          style={{
+            backgroundImage: `url("/tarot_${t}_theme.png")`,
+            opacity: theme === t ? 0.18 : 0,
           }}
         />
-      )}
+      ))}
+
+      {/* Общие радиальные и линейные затемняющие градиенты */}
+      <div 
+        className="fixed inset-0 z-0 pointer-events-none w-screen h-screen transition-opacity duration-1000" 
+        style={{ 
+          background: 'radial-gradient(circle at center, transparent 0%, rgba(7, 9, 15, 0.95) 100%), linear-gradient(to bottom, transparent 0%, rgba(7, 9, 15, 0.5) 50%, rgba(7, 9, 15, 1) 100%)',
+          opacity: ['love', 'career', 'money', 'self', 'general'].includes(theme) ? 1 : 0,
+        }}
+      />
 
       {/* Дыхание Бездны на фоне */}
       <div className="void-glow-bg" />
