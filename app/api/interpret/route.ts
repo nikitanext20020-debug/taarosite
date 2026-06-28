@@ -21,6 +21,7 @@ import { buildSystemPrompt, buildUserPrompt } from '@/lib/ai/prompt';
 import { site } from '@/lib/site';
 
 export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
 export async function POST(req: Request) {
   try {
