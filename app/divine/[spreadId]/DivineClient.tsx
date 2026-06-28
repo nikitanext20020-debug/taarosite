@@ -161,9 +161,9 @@ export default function DivineClient({ spread }: { spread: SpreadType }) {
     await reveal(readingId ?? undefined);
   }
 
-  // ── Проверка подписки (Заглушка) ────────────────────────
+  // ── Проверка подписки ────────────────────────
   async function checkSub() {
-    haptic('success');
+    haptic('light');
     await reveal();
   }
 
@@ -185,9 +185,14 @@ export default function DivineClient({ spread }: { spread: SpreadType }) {
       });
       const data = await res.json();
 
-      if (res.status === 402) {
+      if (res.status === 402 || res.status === 403) {
         // Paywall — нужна подписка
-        setPhase('paywall');
+        if (phase === 'paywall') {
+          setError('Вы ещё не подписались на канал. Если уже подписались, подождите пару секунд и попробуйте снова.');
+          haptic('warning');
+        } else {
+          setPhase('paywall');
+        }
         setFreeReadsLeft(data.freeReadsLeft ?? 0);
         return;
       }
@@ -575,24 +580,30 @@ export default function DivineClient({ spread }: { spread: SpreadType }) {
             </div>
           )}
 
-          {/* ═══ PAYWALL (Заглушка) ═══ */}
+          {/* ═══ PAYWALL ═══ */}
           {phase === 'paywall' && (
-            <div className="mt-10 rounded-2xl border border-gold/30 bg-gradient-to-b from-midnight to-void p-6 text-center shadow-glow relative z-10">
+            <div className="mt-10 rounded-2xl border border-gold/30 bg-gradient-to-b from-midnight to-void p-6 text-center shadow-glow relative z-10 animate-fadeIn">
               <div className="mb-3 text-4xl">🔮</div>
               <h3 className="mb-2 font-display text-2xl text-moon">
-                Открыть текст расклада
+                Бесплатные гадания закончились
               </h3>
               <p className="mb-4 text-moon/60">
-                В демо-режиме вы можете открыть расклад бесплатно.
+                Чтобы прочитать интерпретацию этого расклада и получить безлимитный доступ к гаданиям, подпишитесь на наш канал.
               </p>
 
               <div className="mt-5 flex flex-col items-center justify-center gap-3 sm:flex-row">
                 <button
-                  onClick={checkSub}
-                  disabled={loading}
+                  onClick={() => openTgLink(tgLinks.channel)}
                   className="btn-primary"
                 >
-                  {loading ? 'Открываю...' : '🔮 Открыть расклад'}
+                  ✉️ Подписаться на канал
+                </button>
+                <button
+                  onClick={checkSub}
+                  disabled={loading}
+                  className="btn-ghost"
+                >
+                  {loading ? 'Проверяю...' : 'Я подписался, открыть'}
                 </button>
               </div>
             </div>
