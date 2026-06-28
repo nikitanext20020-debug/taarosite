@@ -6,6 +6,9 @@ const nextConfig = {
       { protocol: 'https', hostname: 'magiachisel.ru' },
     ],
   },
+  env: {
+    CHANNEL_USERNAME: process.env.CHANNEL_USERNAME,
+  },
 };
 
 module.exports = nextConfig;
