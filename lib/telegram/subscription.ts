@@ -30,7 +30,8 @@ export async function checkSubscription(userId: number): Promise<SubscriptionRes
   // при его отсутствии — @username.
   const chatId = channelId || (channelUsername ? `@${channelUsername.replace(/^@/, '')}` : '');
   if (!chatId) {
-    return { subscribed: false, status: 'no-channel-config' };
+    // Если канал не настроен, пускаем всех (подписка не требуется)
+    return { subscribed: true, status: 'no-channel-config' };
   }
 
   try {
