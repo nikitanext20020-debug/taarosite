@@ -16,7 +16,8 @@ export async function GET() {
     return NextResponse.json({ error: 'BOT_TOKEN не задан' }, { status: 500 });
   }
 
-  const webhookUrl = `${appUrl}/api/bot/webhook`;
+  const baseUrl = (appUrl || '').replace(/\/$/, '');
+  const webhookUrl = `${baseUrl}/api/bot/webhook`;
   const res = await fetch(
     `https://api.telegram.org/bot${token}/setWebhook?url=${encodeURIComponent(webhookUrl)}`,
   );
