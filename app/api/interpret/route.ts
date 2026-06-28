@@ -41,9 +41,46 @@ export async function POST(req: Request) {
     }
 
     // ── PAYWALL ──────────────────────────────────────────────
-    // ДЕМО-ЗАГЛУШКА: временно отключаем ограничения подписки для свободного тестирования
-    let subscribed = true;
+    let subscribed = false;
     let usedFree = false;
+
+    if (tgUser) {
+      const subResult = await checkSubscription(tgUser.id);
+      subscribed = subResult.subscribed;
+
+      if (!subscribed) {
+        const user = await prisma.user.findUnique({
+          where: { telegramId: String(tgUser.id) },
+        });
+
+        if (user && user.freeReadsLeft > 0) {
+          await consumeFreeRead({ tgId: tgUser.id });
+          usedFree = true;
+          subscribed = true;
+        }
+      }
+    } else if (webUserId) {
+      const user = await prisma.user.findUnique({
+        where: { webId: webUserId },
+      });
+
+      if (user && user.freeReadsLeft > 0) {
+        await consumeFreeRead({ webId: webUserId });
+        usedFree = true;
+        subscribed = true;
+      }
+    }
+
+    if (!subscribed) {
+      return NextResponse.json(
+        {
+          error: 'paywall',
+          message: 'Закончились бесплатные гадания. Подпишитесь на канал.',
+          needSubscription: true,
+        },
+        { status: 403 },
+      );
+    }
     // ── /PAYWALL ─────────────────────────────────────────────
 
     // Если интерпретация уже была — отдаём
