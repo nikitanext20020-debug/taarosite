@@ -596,13 +596,19 @@ export default function DivineClient({ spread }: { spread: SpreadType }) {
           {/* ═══ PAYWALL ═══ */}
           {phase === 'paywall' && (
             <div className="mt-10 rounded-2xl border border-gold/30 bg-gradient-to-b from-midnight to-void p-6 text-center shadow-glow relative z-10 animate-fadeIn">
-              <div className="mb-3 text-4xl">🔮</div>
+              <div className="mb-4 text-5xl animate-pulse drop-shadow-[0_0_15px_rgba(200,160,60,0.8)]">🔮</div>
               <h3 className="mb-2 font-display text-2xl text-moon">
                 Бесплатные гадания закончились
               </h3>
               <p className="mb-4 text-moon/60">
                 Чтобы прочитать интерпретацию этого расклада и получить безлимитный доступ к гаданиям, подпишитесь на наш канал.
               </p>
+
+              {error && (
+                <div className="mx-auto mb-4 max-w-sm rounded-lg border border-rose-500/40 bg-rose-500/10 p-3 text-center text-sm text-rose-200 animate-fadeIn">
+                  {error}
+                </div>
+              )}
 
               <div className="mt-5 flex flex-col items-center justify-center gap-3 sm:flex-row">
                 <button
