@@ -36,6 +36,8 @@ export const tgLinks = {
   // Бот
   bot: `https://t.me/${site.botUsername}`,
   // WebApp-ссылка на расклад или главную
-  webapp: (spreadId?: string) =>
-    spreadId ? `${site.appUrl.replace(/\\/$/, '')}/divine/${spreadId}` : site.appUrl.replace(/\\/$/, ''),
+  webapp: (spreadId?: string) => {
+    const base = site.appUrl.endsWith('/') ? site.appUrl.slice(0, -1) : site.appUrl;
+    return spreadId ? `${base}/divine/${spreadId}` : base;
+  },
 };
