@@ -530,7 +530,7 @@ export default function DivineClient({ spread }: { spread: SpreadType }) {
               <div className="flex flex-row flex-wrap justify-center items-end gap-4 sm:gap-6">
                 {cards.filter((c) => c.position !== 0).map((c, i) => {
                   const card = getCard(c.id);
-                  const faceUp = phase === 'reading';
+                  const faceUp = true; // Карты всегда остаются открытыми после раздачи
                   const cardWithDeckImage = {
                     ...card,
                     image: getCardImageUrl(card.id, deckId),
@@ -555,7 +555,7 @@ export default function DivineClient({ spread }: { spread: SpreadType }) {
                 const bottomCardData = cards.find((c) => c.position === 0);
                 if (!bottomCardData) return null;
                 const card = getCard(bottomCardData.id);
-                const faceUp = phase === 'reading';
+                const faceUp = true;
                 const cardWithDeckImage = {
                   ...card,
                   image: getCardImageUrl(card.id, deckId),
@@ -577,6 +577,19 @@ export default function DivineClient({ spread }: { spread: SpreadType }) {
                   </div>
                 );
               })()}
+
+              {/* Индикатор загрузки во время генерации текста */}
+              {loading && phase !== 'shuffling' && (
+                <div className="mt-8 flex flex-col items-center justify-center animate-pulse">
+                  <div className="mb-3 text-3xl">✨</div>
+                  <p className="font-display text-xl text-gold-bright">
+                    Трактую ваши карты...
+                  </p>
+                  <p className="text-sm text-moon/60 mt-2">
+                    Вглядываюсь в лунные тени
+                  </p>
+                </div>
+              )}
             </div>
           )}
 
