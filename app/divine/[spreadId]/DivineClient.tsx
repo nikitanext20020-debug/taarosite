@@ -579,7 +579,7 @@ export default function DivineClient({ spread }: { spread: SpreadType }) {
               })()}
 
               {/* Индикатор загрузки во время генерации текста */}
-              {loading && phase !== 'shuffling' && (
+              {loading && (
                 <div className="mt-8 flex flex-col items-center justify-center animate-pulse">
                   <div className="mb-3 text-3xl">✨</div>
                   <p className="font-display text-xl text-gold-bright">
