@@ -581,7 +581,9 @@ export default function DivineClient({ spread }: { spread: SpreadType }) {
               {/* Индикатор загрузки во время генерации текста */}
               {loading && (
                 <div className="mt-8 flex flex-col items-center justify-center animate-pulse">
-                  <div className="mb-3 text-3xl">✨</div>
+                  <div className="mb-3">
+                    <AnimatedEmoji id="sparkles" fallback="✨" className="w-12 h-12 object-contain inline-block drop-shadow-[0_0_10px_rgba(200,160,60,0.5)]" />
+                  </div>
                   <p className="font-display text-xl text-gold-bright">
                     Трактую ваши карты...
                   </p>
@@ -596,7 +598,9 @@ export default function DivineClient({ spread }: { spread: SpreadType }) {
           {/* ═══ PAYWALL ═══ */}
           {phase === 'paywall' && (
             <div className="mt-10 rounded-2xl border border-gold/30 bg-gradient-to-b from-midnight to-void p-6 text-center shadow-glow relative z-10 animate-fadeIn">
-              <div className="mb-4 text-5xl animate-pulse drop-shadow-[0_0_15px_rgba(200,160,60,0.8)]">🔮</div>
+              <div className="mb-4 animate-pulse drop-shadow-[0_0_15px_rgba(200,160,60,0.8)]">
+                <AnimatedEmoji id="magic-ball" fallback="🔮" className="w-16 h-16 object-contain inline-block" />
+              </div>
               <h3 className="mb-2 font-display text-2xl text-moon">
                 Бесплатные гадания закончились
               </h3>

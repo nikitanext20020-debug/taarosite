@@ -20,6 +20,10 @@ const EMOJI_MAPPING: Record<string, string> = {
   'celtic-cross': 'https://fonts.gstatic.com/s/e/notoemoji/latest/2795/512.webp', // fallback to plus
   'relationship': 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f49e/512.webp',
   'card-of-the-day': 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f31e/512.webp',
+
+  // UI Elements
+  'magic-ball': 'https://fonts.gstatic.com/s/e/notoemoji/latest/1f52e/512.webp',
+  'sparkles': 'https://fonts.gstatic.com/s/e/notoemoji/latest/2728/512.webp',
 };
 
 export default function AnimatedEmoji({
