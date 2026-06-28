@@ -35,7 +35,7 @@ export const tgLinks = {
   channel: `https://t.me/${site.channelUsername}`,
   // Бот
   bot: `https://t.me/${site.botUsername}`,
-  // WebApp-ссылка на расклад
+  // WebApp-ссылка на расклад или главную
   webapp: (spreadId?: string) =>
-    `${site.appUrl}/divine/${spreadId ?? ''}`,
+    spreadId ? `${site.appUrl.replace(/\\/$/, '')}/divine/${spreadId}` : site.appUrl.replace(/\\/$/, ''),
 };
